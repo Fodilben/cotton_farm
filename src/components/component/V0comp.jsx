@@ -5,28 +5,35 @@ import Productivity from "./Productivity";
 import Leaderboard from "./Leaderboard";
 import Settings from "./Settings";
 import Sidebar from "./Sidebar"
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export  function V0comp() {
-  const router =useRouter()
-  useEffect(() => {
-    const checkAuth = async () => {
-     const data=JSON.parse(localStorage.getItem('authUser'))
+export function V0comp() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
 
-      if (!data) {
-        router.push("/login"); // Redirect if not authenticated
-      } else {
-        console.log(data)
-      } 
+  useEffect(() => {
+    const checkAuth = () => {
+      try {
+        const data = JSON.parse(localStorage.getItem('authUser'));
+        if (!data) {
+          router.push("/login"); // Redirect if not authenticated
+        } else {
+          const storageData = data.data;
+          const newData = storageData?.newData;
+          setUsername(newData?.userInfo?.username || 'no user');
+          setEmail(newData?.user?.email || 'no user');
+        }
+      } catch (error) {
+        console.error("Error parsing localStorage data:", error);
+        router.push("/login"); // Redirect on error
+      }
     };
 
     checkAuth();
   }, [router]);
-  const  storageData=  JSON.parse(localStorage.getItem("authUser"))?.data 
-  const newData = storageData?.newData 
-  const {username}=newData?.userInfo || 'no user'
-  const {email}=newData?.user || 'no user'
+
   return (
     <div className="flex min-h-screen w-full">
       <Sidebar email={email} username={username} />
