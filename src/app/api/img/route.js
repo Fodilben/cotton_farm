@@ -33,7 +33,8 @@ export async function POST(req) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const result = await model.generateContent([
-      "Extract the focus statistics and focus record from this image and return the data in JSON format. The JSON should contain two parts:1. 'focusStatistics' with today's Pomos, today's focus time, total Pomos, and total focus duration.2. 'focusRecord' with time, activity, and duration for each focus session.Return the result using minimal tokens",
+      "Extract the focus statistics and focus record from this image and return the data as a plain string containing a valid JSON object. Do not include any backticks or code block formatting. The JSON should have two parts: 1. 'focusStatistics' with 'todaysPomos', 'todaysFocusTime', 'totalPomos', and 'totalFocusDuration'. 2. 'focusRecord' with 'time', 'activity', and 'duration' for each focus session. Return the result using minimal tokens, with no additional formatting.",
+  
       {
         fileData: {
           fileUri: uploadResult.file.uri,
