@@ -7,7 +7,7 @@ import { Calendar, Repeat, CheckSquare } from "lucide-react"
 
 import { useState } from "react"
 import { Button } from "../ui/button"
-import { Save } from "lucide-react";
+import { Save , X} from "lucide-react";
 
 interface Task {
   name: string
@@ -104,12 +104,18 @@ export function TasksVerify({ analysisResult }: TasksVerify) {
           </CardContent>
         </Card>
       </div>
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center mt-6 gap-6">
         <Button onClick={handleSave} disabled={isSaved}>
           {isSaved ? "Saved!" : "Save Data"}
           <Save className="ml-2 h-4 w-4" />
         </Button>
+        <Button variant="outline">
+          <X className="w-4 h-4 mr-2" />
+          Cancel
+        </Button>
+        
       </div>
+      
     </div>
   );
 }
