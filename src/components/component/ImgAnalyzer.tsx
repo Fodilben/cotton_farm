@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 interface ImgAnalyzerProps {
-  setAnalysisResult: (result: string) => void;
+  setAnalysisResult: (newData: object) => void;
 }
 export function ImgAnalyzer({ setAnalysisResult }: ImgAnalyzerProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -14,16 +15,48 @@ export function ImgAnalyzer({ setAnalysisResult }: ImgAnalyzerProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [prompt, setPrompt] = useState("");
-  
+  const [userErr, setUserErr] = useState('');
+  const [dataType, setDataType] = useState("pomos");
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       setSelectedFile(event.target.files[0]);
     }
   };
-const toggleAdvanced = () => {
-  setShowAdvanced(!showAdvanced);
-};
+
+  const toggleAdvanced = () => {
+    setShowAdvanced(!showAdvanced);
+  };
+
+  const sendRequest = async (formData: FormData, url: string) => {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data.result);
+      const newData = {
+        res: data.result as string,
+        type: formData.get("type") as string,
+      };
+      setAnalysisResult(newData);
+    } catch (error) {
+      console.error("Error:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unknown error occurred");
+      }
+    }
+    setIsLoading(false);
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedFile) {
@@ -36,31 +69,18 @@ const toggleAdvanced = () => {
 
     const formData = new FormData();
     formData.append("image", selectedFile);
-
-    try {
-      const response = await fetch("/api/img", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log(data.result);
-
-      setAnalysisResult(data.result);
-    } catch (error) {
-      console.error("Error:", error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+    formData.append("type", dataType.trim());
+    if (prompt.trim()) {
+      formData.append("prompt", prompt.trim());
     }
-    setIsLoading(false);
+    if (userErr.trim()) {
+      formData.append("userErr", userErr.trim());
+    }
+
+    const url = dataType === "task" ? "/api/img/tasks" : "/api/img/pomos";
+    await sendRequest(formData, url);
   };
+
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-background border border-border rounded-lg shadow-sm">
       <h2 className="text-2xl font-bold mb-2">Message Analyzer</h2>
@@ -69,6 +89,23 @@ const toggleAdvanced = () => {
       </p>
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Type of Data</Label>
+            <RadioGroup
+              value={dataType}
+              onValueChange={setDataType}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="task" id="task" />
+                <Label htmlFor="task">Task</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="pomos" id="pomos" />
+                <Label htmlFor="pomos">Pomos</Label>
+              </div>
+            </RadioGroup>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="message">Message File</Label>
             <Input id="message" type="file" onChange={handleFileChange} />

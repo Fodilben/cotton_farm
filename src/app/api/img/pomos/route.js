@@ -9,18 +9,28 @@ const fileManager = new GoogleAIFileManager(
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
 
 export async function POST(req) {
+ 
   try {
     // Parse the incoming request to get the image data
     const formData = await req.formData();
     const file = formData.get('image');
+    const userErr = formData.get('userErr');
+    const prompt = formData.get('prompt');
 
     if (!file) {
       return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
     }
 
-   const buffer = Buffer.from(await file.arrayBuffer());
+    // Prepare the base prompt
+    let aiPrompt = "Extract the focus statistics and focus record from this image and return the data as a plain string containing a valid JSON object. Do not include any backticks or code block formatting. The JSON should have two parts: 1. 'focusStatistics' with 'todaysPomos', 'todaysFocusTime', 'totalPomos', and 'totalFocusDuration'. 2. 'focusRecord' with 'time', 'activity', and 'duration' for each focus session. Return the result using minimal tokens, with no additional formatting.";
+
+    // Add user prompt if provided
+    if (prompt) {
+      aiPrompt += ` Additional remark: ${prompt}`;
+    }
+    const buffer = Buffer.from(await file.arrayBuffer());
     const fileData = new Uint8Array(buffer);
-     const tempFilePath = path.join(process.cwd(), 'tmp', file.name);
+    const tempFilePath = path.join(process.cwd(), 'tmp', file.name);
     if (!fs.existsSync(path.join(process.cwd(), 'tmp'))) {
       fs.mkdirSync(path.join(process.cwd(), 'tmp'));
     }
@@ -33,8 +43,7 @@ export async function POST(req) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const result = await model.generateContent([
-      "Extract the focus statistics and focus record from this image and return the data as a plain string containing a valid JSON object. Do not include any backticks or code block formatting. The JSON should have two parts: 1. 'focusStatistics' with 'todaysPomos', 'todaysFocusTime', 'totalPomos', and 'totalFocusDuration'. 2. 'focusRecord' with 'time', 'activity', and 'duration' for each focus session. Return the result using minimal tokens, with no additional formatting.",
-  
+      aiPrompt,
       {
         fileData: {
           fileUri: uploadResult.file.uri,
